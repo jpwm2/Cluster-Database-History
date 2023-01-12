@@ -1,15 +1,22 @@
-from sympy import prime
+from sympy import isprime
 
 class ArrowNetworkDB:
     def __init__(self):
+        self.lines = []
+        def getFile():
+            with open('ArrowNetworkDB', 'r') as f:
+                strLines = f.read()
+                strLines = strLines.splitlines()
+                for line in strLines:
+                    line = eval(line)
+                    line[1] = dict(line[1])
+                    line[2] = list(line[2])
+                    self.lines.append(line)
         getFile()
 
-        def getFile(self):
-            with open('ArrowNetworkDB', 'r') as f:
-                self.lines = f.readlines()
 
     def areYouOwner(self,inObj,byOwner):
-        owners = self.returnOwners(self.lines[inObj])
+        owners = self.lines[inObj][1]
         ownerNumber = len(owners)
         count = 0
         for id in byOwner.keys():
@@ -19,48 +26,70 @@ class ArrowNetworkDB:
         return True if ownerNumber // 2 < count else False
 
     def putAccessArrow(self,fromObj, byOwner, toObj):
-        if self.areYouOwner(fromObj, byOwner):
-            pathesTO = self.returnDeeper(self.lines[toObj])
-            pathesFO = self.returnDeeper(self.lines[fromObj])
-            rootsTO, rootsFO = []
-            for pto in pathesTO:
-                rootsTO.add(pto[0])
-            for pfo in pathesFO:
-                rootsFO.add(pfo[0])
+        def judgeAccess(self):
+            rootsFO,rootsTO = []
+            for path in self.lines[fromObj][2]:
+                rootsFO.append(path[0])
+            for path in self.lines[toObj][2]:
+                rootsTO.append(path[0])
             for rfo in rootsFO:
-                if rfo in rootsTO:
-                    self.lines[fromObj][3] += pathesTO
-                    break
+                for rto in rootsTO:
+                    if rfo.equal(rto):
+                        return True
+            return False
+
+        def giveCiteTo(self):
+            setLines = set(self.lines[fromObj][2]).add(self.lines[toObj][2])
+            self.lines[fromObj][2] = list(setLines)
+
+        def giveCiteFrom():
+            self.lines[toObj][3].append(fromObj)
+            
+        if self.areYouOwner(fromObj, byOwner):
+            if judgeAccess():
+                giveCiteTo()
+                giveCiteFrom()
             return True
         else:
             return False
             
     def deleteAccessArrow(self, fromObj, byOwner, toObj):
-        if self.areYouOwner(fromObj, byOwner):
-            
+        if self.areYouOwner(fromObj, byOwner): 
+            return True
+        else:
+            return False
                 
 
     def runAccessAuthority(self):
         pass
 
-    def returnData(line):
-        return line[0]
+class DBServer:
+    def __init__(self):
+        self.lines = []
+        def getFile():
+            with open('ArrowNetworkDB', 'r') as f:
+                strLines = f.read()
+                strLines = strLines.splitlines()
+                for line in strLines:
+                    line = eval(line)
+                    line[1] = dict(line[1])
+                    line[2] = list(line[2])
+                    self.lines.append(line)
+        getFile()
+        self.andb = ArrowNetworkDB()
 
-    def returnOwners(line):
-        return line[1]
-
-    def returnDeeper(line):
-        return line[2]
-
-    def returnShallower(line):
-        return line[3]
 
 class RootOwner:
+    iamOwner = [{'8':'rootpassword'}]
     def __init__(self):
         self.andb = ArrowNetworkDB()
         self.length = len(self.andb.lines)
-        if prime.isprime(self.length):
-            pass
+        if isprime(self.length):
+            if self.andb.putAccessArrow(self.length,self.iamOwner,'10'):
+                print('success connect')
+            else:
+                print('Error connect')
+                
 
     def passMeInitialObj(self, OwnerPassword,data = None):
         pass
