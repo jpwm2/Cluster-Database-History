@@ -9,17 +9,17 @@ class DBServerBasic:
     """
     data = {}
     def __init__(self):
-        def getFile(num, data = {}):
+        def getFile(num=0, data = {}):
             match num:
                 case 0:
                     with open('ANDBData','r') as f:
                         self.data = self.changeType(f.read(),'d')
                 case 1:
                     pass
-        getFile(0)
+        getFile()
 
 
-    def saveFile(self,num,data1 = None,data2=None):
+    def saveFile(self,num = 0,data1 = None,data2=None):
         print(self.data,end='\n\n')
         match num:
             case 0:
@@ -34,33 +34,215 @@ class DBServerBasic:
                     f.write(data2)
 
     def changeType(self,data, toType = 's'):
-        data = str(data)
         match toType:
             case 's':
                 data = str(data)
             case 'l':
+                if str(type(data)) == "<class 'dict_keys'>":
+                    data = list(data)
+                data = str(data)
                 data = literal_eval(data)
-                if str(type(data)) != "<class 'list'>":
-                    data = [data]
+                match str(type(data)):
+                    case "<class 'int'>":
+                        data = [data]
+                    case _:
+                        data = list(data)
+                tempData = data
+                for i in range(len(tempData)):
+                    data[i] = str(tempData[i])
             case 'd':
+                data = str(data)
                 evalData = literal_eval(data)
-                data = dict(evalData)
+                tempData = dict(evalData)
+                data = {}
+                for k in tempData.keys():
+                    if str(type(tempData.get(k))) == "<class 'int'>":
+                        data[str(k)] = str(tempData.get(k))
+                    else:
+                        data[str(k)] = tempData.get(k)
             case 'se':
+                data = str(data)
                 data = literal_eval(data)
                 data = set(data)
+            case 't':
+                data = str(data)
+                data = literal_eval(data)
+                data = tuple(data)
+            case 'i':
+                data = int(data)
             case _:
-                print('fucyoumen')
+                pass
         return data
 
-        
+    def getKeys(self):
+        return self.data.keys()
+
+    def getData(self,obj):
+        return self.data.get(obj)[0]
+
+    def getPasskey(self, obj):
+        return self.data.get(obj)[1][0]
+
+    def getOwners(self, obj):
+        return self.data.get(obj)[1][1]
+
+    def getObjsAccessTo(self, obj):
+        return self.data.get(obj)[2]
+
+    def getChainsAccessTo(self, obj):
+        return self.data.get(obj)[3]
+
+    def getObjsAccessFrom(self,obj):
+        return self.data.get(obj)[4]
+
+    def getChainsAccessFrom(self, obj):
+        return self.data.get(obj)[5]
+
+    def addModel(self,obj):
+        self.data[obj] = [None,[None,set()],set(),set(),set(),set()]
+
+    def setData(self,obj, data):
+        obj = self.changeType(obj,'s')
+        data = self.changeType(data, 's')
+        self.data.get(obj)[0] = data
+    
+    def setPasskey(self, obj, passkey):
+        obj = self.changeType(obj, 's')
+        passkey = self.changeType(passkey, 's')
+        self.data.get(obj)[1][0] = passkey
+
+    def addOwner(self, obj, addObj):
+        obj = self.changeType(obj, 's')
+        addObj = self.changeType(addObj, 's')
+        self.data.get(obj)[1][1].add(addObj)
+
+    def addObjAccessTo(self, obj, addObj):
+        obj = self.changeType(obj, 's')
+        addObj = self.changeType(addObj, 's')
+        self.data.get(obj)[2].add(addObj)
+
+    def addChainAccessTo(self, obj, addPath):
+        obj = self.changeType(obj, 's')
+        addPath = self.changeType(addPath, 't')
+        self.data.get(obj)[3].add(addPath)
+
+    def addObjAccessFrom(self, obj, addObj):
+        obj = self.changeType(obj, 's')
+        addObj = self.changeType(addObj, 's')
+        self.data.get(obj)[4].add(addObj)
+
+    def addChainAccessFrom(self, obj, addPath):
+        obj = self.changeType(obj, 's')
+        addPath = self.changeType(addPath, 't')
+        self.data.get(obj)[5].add(addPath)
+
+    def deleteOwner(self,obj,deleteObj):
+        obj = self.changeType(obj, 's')
+        deleteObj = self.changeType(deleteObj, 's')
+        self.data.get(obj)[1][1].remove(deleteObj)
+    
+    def deleteObjAccessTo(self, obj, deleteObj):
+        obj = self.changeType(obj, 's')
+        deleteObj = self.changeType(deleteObj, 's')
+        self.data.get(obj)[2].remove(deleteObj)
+
+    def deleteChainAccessTo(self, obj, deletePath):
+        obj = self.changeType(obj, 's')
+        deletePath = self.changeType(deletePath, 't')
+        self.data.get(obj)[3].remove(deletePath)
+
+    def deleteObjAccessFrom(self, obj, deleteObj):
+        obj = self.changeType(obj, 's')
+        deleteObj = self.changeType(deleteObj, 's')
+        self.data.get(obj)[4].remove(deleteObj)
+
+    def deleteChainAccessFrom(self, obj, deletePath):
+        obj = self.changeType(obj, 's')
+        deletePath = self.changeType(deletePath, 't')
+        self.data.get(obj)[5].remove(deletePath)
+
+
+
 class DBServer(DBServerBasic):
     """
 
     サーバーの基本的な機能のメソッドを有するクラス
 
     """
-    directryFroms = []
-    directryTos = []
+
+    def setPasskey(self,obj, passkey):
+        obj = self.changeType(obj, 's')
+        passkey = self.changeType(passkey, 's')
+        super().setPasskey(obj, passkey)
+        self.saveFile()
+
+    def addOwner(self, obj, addObj):
+        obj = self.changeType(obj, 's')
+        addObj = self.changeType(addObj, 's')
+        super().addOwner(obj, addObj)
+        self.saveFile()
+
+    def deleteOwner(self,obj, deleteObj):
+        obj = self.changeType(obj, 's')
+        deleteObj = self.changeType(deleteObj, 's')
+        if deleteObj in super().getOwners(obj):
+            super().deleteOwner(obj, deleteObj)
+            self.saveFile()
+
+    def setData(self, obj, data):
+        obj = self.changeType(obj, 's')
+        data = self.changeType(data, 's')
+        super().setData(obj, data)
+        self.saveFile()
+
+    def addChainAccessTo(self,objIndexInPath, addPath):
+        objIndexInPath = self.changeType(objIndexInPath, 'i')
+        addPath = self.changeType(addPath, 't')
+        leftChain = []
+        for iLeft in range(objIndexInPath):
+            leftChain.append(addPath[iLeft])
+        super().addChainAccessTo(addPath[objIndexInPath], leftChain)
+        for obj in leftChain:
+            self.addObjAccessTo(addPath[objIndexInPath],obj)
+        self.saveFile()
+                    
+    def addChainAccessFrom(self,objIndexInPath, addPath):
+        objIndexInPath = self.changeType(objIndexInPath, 'i')
+        addPath = self.changeType(addPath, 't')
+        rightChain = []
+        for iRight in range(objIndexInPath,len(addPath)):
+            rightChain.append(addPath[iRight])
+        super().addChainAccessFrom(addPath[objIndexInPath], rightChain)
+        for obj in rightChain:
+            self.addObjAccessFrom(addPath[objIndexInPath],obj)
+        self.saveFile()
+
+    def deleteChainAccessTo(self, objIndexInPath, deletePath):
+        objIndexInPath = self.changeType(objIndexInPath,'i')
+        deletePath = self.changeType(deletePath,'t')
+        leftChain = []
+        for iLeft in range(objIndexInPath):
+            leftChain.append(deletePath[iLeft])
+        if self.changeType(self.changeType(leftChain,'t')) in self.changeType(self.getChainAccessTo(deletePath[objIndexInPath]),'l'):
+            super().deleteChainAccessTo(deletePath[objIndexInPath],leftChain)
+        for obj in deletePath:
+            if obj in self.getObjsAccessTo(deletePath[objIndexInPath]):
+                self.deleteObjAccessTo(deletePath[objIndexInPath],obj)
+        self.saveFile()
+
+    def deleteChainAccessFrom(self, objIndexInPath, deletePath):
+        objIndexInPath = self.changeType(objIndexInPath,'i')
+        deletePath = self.changeType(deletePath,'t')
+        rightChain = []
+        for iRight in range(objIndexInPath, len(deletePath)):
+            rightChain.append(deletePath[iRight])
+        if self.changeType(self.changeType(rightChain, 't')) in self.changeType(self.getChainAccessFrom(deletePath[objIndexInPath]),'l'):
+            super().deleteChainAccessFrom(deletePath[objIndexInPath],rightChain)
+        for obj in deletePath:
+            if obj in self.getObjsAccessFrom(deletePath[objIndexInPath]):
+                self.deleteObjAccessFrom(deletePath[objIndexInPath],obj)
+        self.saveFile()
+
 
     def checkObj(self, obj):
         """
@@ -74,11 +256,15 @@ class DBServer(DBServerBasic):
         
         """
         obj = self.changeType(obj,'s')
-        if obj not in self.data.keys():
-            self.data[obj] = [None,['rootpasskey1234',['8']],[],[]]
-            self.addAccessTo0(obj,['8','9'])
-            self.addAccessFrom0('8',obj)
-            self.addAccessFrom0('9',obj)
+        if obj not in self.getKeys():
+            self.addModel(obj)
+            self.addOwner(obj, '8')
+            self.addChainAccessTo(2,['8','9',obj])
+            self.addChainAccessTo(1,['8','9',obj])
+            self.addChainAccessFrom(2,['8','9',obj])
+            self.addChainAccessFrom(1,['8','9',obj])
+            self.addChainAccessFrom(0,['8','9',obj])
+            self.saveFile()
 
     def judgeYouOwners(self, obj, owners):
         """
@@ -97,7 +283,7 @@ class DBServer(DBServerBasic):
         obj = self.changeType(obj, 's')
         owners = self.changeType(owners,'d')
         def operatePasskeyOwner(obj,owners):
-            return True if self.data.get(obj)[1][0] == owners.get(obj) else False
+            return True if self.getPasskey(obj) == owners.get(obj) else False
         def allowPasskeyOwner(ownerNumber, ownerCount):
             if ownerNumber == 0:
                 return True
@@ -106,7 +292,7 @@ class DBServer(DBServerBasic):
                     ownerCount = 0.1
                 return True if ownerNumber / ownerCount < 2 else False
         self.checkObj(obj)
-        owners0 = self.data.get(obj)[1][1]
+        owners0 = self.getOwners(obj)
         ownerNumber = 0
         ownerCount = 0
         for o in owners0:
@@ -141,366 +327,163 @@ class DBServer(DBServerBasic):
         """
         fromObj = self.changeType(fromObj,'s')
         toObj = self.changeType(toObj,'s')
-        newSearchObjs = set()
-        for path in self.data.get(fromObj)[2]:
-            path = self.changeType(path, 'se')
-            newSearchObjs |= path
-        newSearchObjs |= self.changeType(self.data.get(fromObj)[3],'se')
+        newSearchObjs = self.getObjsAccessTo(fromObj)
+        newSearchObjs |= self.getObjsAccessFrom(fromObj)
         newSearchObjs -= searchedObjs
         if toObj in newSearchObjs:
             return True
         else:
             searchedObjs |= newSearchObjs
-            for o in newSearchObjs:
+            for o in self.changeType(newSearchObjs,'l'):
                 if self.judgeAccess(o, toObj, searchedObjs):
                     return True
             return False
 
-    
 
-    def addAccessTo0(self, obj, addObjPath):
-        """
+class ArrowNetworkDB():
+    def __init__(self):
+        self.d = DBServer()
+
+    def addChainsAccessTo(self,path,owners):
         
-        オブジェにアクセス先パスを追加する
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ
-        addObjPath : list
-            追加するパス
-        
-        """
-        obj = self.changeType(obj,'s')
-        addObjPath = self.changeType(addObjPath,'l')
-        objPathes = self.data.get(obj)[2]
-        if addObjPath not in objPathes:
-            self.data.get(obj)[2].append(addObjPath)
+        for iCenter in range(1, len(path)):
+            self.d.checkObj(path[iCenter])
+            if self.d.judgeYouOwners(path[iCenter],owners):
+                self.d.addChainAccessTo(iCenter,path)
 
+    def addChainsAccessFrom(self,path, owners):
+        for iCenter in range(len(path)):
+            self.d.checkObj(path[iCenter])
+            if self.d.judgeYouOwners(path[iCenter], owners):
+                self.d.addChainAccessFrom(iCenter, path)
 
-    def addAccessFrom0(self, obj, addObj):
-        """
-        
-        オブジェにアクセス元オブジェを追加する
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ
-        addObj : string
-            追加するオブジェ
-        
-        """
-        obj = self.changeType(obj,'s')
-        addObj = self.changeType(addObj,'s')
-        if addObj not in self.data.get(obj)[3]:
-            self.data.get(obj)[3].append(addObj)
-            
+    def deleteChainsAccessTo(self, path, owners):
+        for iCenter in range(1, len(path)):
+            self.d.checkObj(path[iCenter])
+            if self.d.judgeYouOwners(path[iCenter],owners):
+                self.d.deleteChainAccessTo(iCenter, path)
+                self.d.deleteChainAccessFrom(iCenter,path)
 
-    def deleteAccessTo0(self, obj, deleteObjPath):
-        """
-        
-        オブジェからアクセス先パスを削除する
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ
-        deleteObjPath : list
-            削除するパス
-        
-        """
-        obj = self.changeType(obj,'s')
-        deleteObjPath = self.changeType(deleteObjPath,'l')
-        if deleteObjPath in self.data.get(obj)[2]:
-            self.data.get(obj)[2].remove(deleteObjPath)
+    def deleteChainsAccessFrom(self, path, owners):
+        for iCenter in range(len(path)):
+            self.d.checkObj(path[iCenter])
+            if self.d.judgeYouOwners(path[iCenter],owners):
+                self.d.deleteChainAccessTo(iCenter, path)
 
+    def addOwners(self, obj, addObjs, owners):
+        addObjs = self.d.changeType(addObjs,'l')
+        self.d.checkObj(obj)
+        for o in addObjs:
+            self.d.checkObj(o)
+            if self.d.judgeYouOwners(obj, owners):
+                self.d.addOwner(obj, o)
 
-    def deleteAccessFrom0(self, obj, deleteObj):
-        """
-        
-        オブジェからアクセス元オブジェを削除する
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ
-        deleteObj : string
-            削除するオブジェ
-        
-        """
-        obj = self.changeType(obj,'s')
-        deleteObj = self.changeType(deleteObj,'s')
-        if deleteObj in self.data.get(obj)[3]:
-            self.data.get(obj)[3].remove(deleteObj)
-
-
-    def addOwner0(self, obj, addObj):
-        """
-        
-        オブジェにオーナオブジェを追加する
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ  
-        addObj : string
-            追加するオブジェ
-            
-        """
-        obj = self.changeType(obj,'s')
-        addObj = self.changeType(addObj,'s')
-        if addObj not in self.data.get(obj)[1][1]:
-            self.data.get(obj)[1][1].append(addObj)
-
-            
-    def deleteOwner0(self, obj, deleteObj):
-        """
-        
-        オブジェからオーナオブジェを削除する
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ  
-        deleteObj : list
-            削除するオブジェ
-            
-        """
-        obj = self.changeType(obj,'s')
-        deleteObj = self.changeType(deleteObj,'s')
-        if deleteObj in self.data.get(obj)[1][1]:
-            self.data.get(obj)[1][1].remove(deleteObj)
-
-
-    def switchObjPasskey0(self, obj, newPasskey):
-        """
-        
-        オブジェのパスキーを入れ替える
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ  
-        newPasskey : string
-            入れ替え先のパスキー
-            
-        """
-        newPasskey = self.changeType(newPasskey,'s')
-        self.data.get(obj)[1][0] = newPasskey
-
-    def switchData0(self, obj, data):
-        """
-        
-        オブジェのデータを入れ替える
-        
-        parameters
-        ----------
-        obj : string
-            対象のオブジェ  
-        data : string
-            入れ替え先のデータ
-            
-        """
-        data = self.changeType(data,'s')
-        self.data.get(obj)[0] = data
-
-    def getData(self,obj):
-        return self.data.get(obj)[0]
-
-    def getAccessTo(self,obj):
-        return self.data.get(obj)[2]
-
-    def getOwners(self,obj):
-        return self.data.get(obj)[1][0]
-    
-    def getAccessFrom(self, obj):
-        return self.data.get(obj)[3] 
-
-    def makeDirectryFroms(self, obj):
-        pass
-
-
-    def makeDirectry(self, obj = '8'):
-        pass
-
-
-
-
-
-class ArrowNetworkDB(DBServer):
-    """
-    
-    アローネットワークデータベースの基本的なメソッドを有するクラス
-    
-    """
-    
-    def addAccessTo(self, owners, obj, addObjPath):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        addObjPath = self.changeType(addObjPath,'l')
-        self.checkObj(obj)
-        for o in addObjPath:
-            self.checkObj(o)
-        if self.judgeYouOwners(obj, owners):
-            self.addAccessTo0(obj,addObjPath)
-            self.saveFile(0)
-
-    
-    def addAccessFrom(self, owners, obj, addObj):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        addObj = self.changeType(addObj,'s')
-        self.checkObj(obj)
-        self.checkObj(addObj)
-        if self.judgeYouOwners(obj,owners):
-            self.addAccessFrom0(obj,addObj)
-            self.saveFile(0)
-    
-            
-    def deleteAccessTo(self, owners, obj, deleteObjPath):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        deleteObjPath = self.changeType(deleteObjPath,'l')
-        self.checkObj(obj)
-        for o in deleteObjPath:
-            self.checkObj(o)
-        if self.judgeYouOwners(obj, owners):
-            self.deleteAccessTo0(obj,deleteObjPath)
-            self.saveFile(0)
-        
-    
-    def deleteAccessFrom(self, owners, obj, deleteObj):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        deleteObj = self.changeType(deleteObj,'s')
-        self.checkObj(obj)
-        self.checkObj(deleteObj)
-        if self.judgeYouOwners(obj,owners):
-            self.deleteAccessFrom0(obj,deleteObj)
-            self.saveFile(0)
-
-
-    def addOwner(self, owners, obj, addObj):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        addObj = self.changeType(addObj,'s')
-        self.checkObj(obj)
-        self.checkObj(addObj)
-        if self.judgeYouOwners(obj, owners):
-            self.addOwner0(obj,addObj)
-            self.saveFile(0)
-
-
-    def deleteOwner(self, owners, obj, deleteObj):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        deleteObj = self.changeType(deleteObj,'s')
-        self.checkObj(obj)
-        self.checkObj(deleteObj)
-        if self.judgeYouOwners(deleteObj, owners):
-            self.deleteOwner0(obj, deleteObj)   
-            self.saveFile(0)
-
-
-    def switchObjPasskey(self, owners, obj, newPasskey = None):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        newPasskey = self.changeType(newPasskey,'s')
-        self.checkObj(obj)
-        if self.judgeYouOwners(obj, owners):
-            self.switchObjPasskey0(obj, newPasskey)
-            self.saveFile(0)
-
-
-    def switchData(self, owners, obj, data):
-        owners = self.changeType(owners,'d')
-        obj = self.changeType(obj,'s')
-        data = self.changeType(data,'s')
-        self.checkObj(obj)
-        if self.judgeYouOwners(obj, owners):
-            self.switchData0(obj, data)
-            self.saveFile(0)
-
-class Tasks(ArrowNetworkDB):
-    """
-    
-    アローネットワークデータベースの機能を一般に必要な機能としてまとめたメソッドを有するクラス
-    
-    """
-    iamRootOwner = {'8':'rootpasskey1234'}
-
-    def createYou(self, obj, newObjPasskey):
-        self.switchObjPasskey(self.iamRootOwner, obj, newObjPasskey)
-        self.deleteOwner(self.iamRootOwner, obj, 8)
-
-    def createObj(self, obj, ownerObjs, newOwners):
-        ownerObjs = self.changeType(ownerObjs,'l')
-        newOwners = self.changeType(newOwners,'d')
-        for o in ownerObjs:
-            self.addOwner(self.iamRootOwner|newOwners, obj, o)
-        self.switchObjPasskey(self.iamRootOwner | newOwners, obj)
-
-    def putData(self, obj, data, owners):
-        self.switchData(owners, obj, data)
-
-    def putAccessesTo(self, fromObj, toObjPathes, owners):
-        toObjPathes = self.changeType(toObjPathes,'l')
-        for path in toObjPathes:
-            self.addAccessTo(owners, fromObj, path)
-
-    def putAccessesFrom(self, fromObjs, toObj, owners):
-        fromObjs = self.changeType(fromObjs,'l')
-        for o in fromObjs:
-            self.addAccessFrom(owners, toObj, o)
-
-    def deleteAccessesTo(self, fromObj, toObjPathes, owners):
-        toObjPathes = self.changeType(toObjPathes, 'l')
-        for path in toObjPathes:
-            self.deleteAccessTo(owners, fromObj, path)
-
-    def deleteAccessesFrom(self, fromObj, toObjs, owners):
-        toObjs = self.changeType(toObjs, 'l')
-        for o in toObjs:
-            self.deleteAccessFrom(owners, o, fromObj)
-
-    def putOwners(self, obj, owners, newOwnerObjs, newOwners):
-        newOwnerObjs = self.changeType(newOwnerObjs, 'l')
-        owners = self.changeType(owners, 'd')
-        newOwners = self.changeType(newOwners,'d')
-        for o in newOwnerObjs:
-            self.addOwner(owners|newOwners, obj, o)
-        
-    def deleteOwners(self, obj, owner, deleteObjs):
-        deleteObjs = self.changeType(deleteObjs, 'l')
+    def deleteOwners(self, obj, deleteObjs, owners):
+        deleteObjs = self.d.changeType(deleteObjs,'l')
+        self.d.checkObj(obj)
         for o in deleteObjs:
-            self.deleteOwner(owner, obj, o)
+            self.d.checkObj(o)
+            if o in self.d.getKeys():
+                if self.d.judgeYouOwners(o, owners):
+                    self.d.deleteOwner(obj, o)
 
-class User(Tasks):
-    def createYou(self, obj,newObjPasskey):
-        self.createYou(obj, newObjPasskey)
-
-    def createFile(self, obj, ownerObjs, newOwners, data, toObjPath = []):
-        self.createObj(obj, ownerObjs, newOwners)
-        self.putData(obj, data, newOwners)
-        self.putAccessesTo(obj, toObjPath, newOwners)
-
-    def switchData(self, obj, owners, data):
-        self.switchData(obj,owners,data)
-
-    def putACCessesToAndFrom(self,fromObj, toObjPathes, owners):
-        self.putAccessesTo(fromObj, toObjPathes,owners)
-        for path in toObjPathes:
-            self.putAccessesFrom(path, fromObj,owners)
-
-    def showDirectry(self):
-        self.saveDirectry()
+    def setPasskey(self, obj, newPasskey, owners):
+        obj = self.d.changeType(obj, 's')
+        newPasskey = self.d.changeType(newPasskey, 's')
+        owners = self.d.changeType(owners,'d')
+        self.d.checkObj(obj)
+        if self.d.judgeYouOwners(obj, owners):
+            self.d.setPasskey(obj, newPasskey)
 
 
-        
-owner1 = {'8':'rootpasskey1234'}
-owner2 = {'12':'userpasskey1234'}
-owner3 = {'15':'userpasskey2345'}
-u = User()
-u.createFile(0,8,owner1,0,[['8','9']])
-u.createFile(1,8,owner1,1,[['8','9']])
+    def setData(self,obj, data, owners):
+        self.d.checkObj(obj)
+        if self.d.judgeYouOwners(obj, owners):
+            self.d.setData(obj, data)
+
+
+class User(ArrowNetworkDB):
+    rootOwner = {'8':'rootpasskey1234'}
+    owners = {}
+
+
+    def login(self,userId,passkey):
+        self.owners[userId] = passkey
+        self.setPasskey(userId,passkey,self.rootOwner)
+        super().deleteOwners(userId,8,self.rootOwner)
+
+    def changePasskey(self, userId, newPasskey):
+        self.setPasskey(userId,newPasskey,self.owners)
+
+
+    def logout(self, userId, passkey):
+        if self.d.judgeYouOwners(userId,{self.d.changeType(userId,'s'):self.d.changeType(passkey,'s')}):
+            del self.owners[userId]
+
+    def createFile(self,fileId, data, accessPath = []):
+        super().addOwners(fileId, self.owners.keys(),self.rootOwner)
+        super().deleteOwners(fileId,8,self.rootOwner)
+        super().addOwners(fileId, self.owners.keys(),self.rootOwner)
+        super().setData(fileId, data, self.owners)
+        super().addChainsAccessTo(accessPath,self.owners)
+        super().addChainsAccessFrom(accessPath,self.owners)
+
+    def changeData(self, fileId, data):
+        super().setData(fileId, data, self.owners)
+
+    def addOwners(self,id):
+        super().addOwners(id, self.owners.keys(),self.owners)
+        super().deleteOwners(id,8,self.rootOwner)
+
+    def deleteOwners(self, id):
+        super().addOwners(id, 8,self.owners)
+        super().deleteOwners(id, self.owners.keys(),self.owners)
+
+    def addPath(self,path):
+        super().addChainsAccessTo(path, self.rootOwner|self.owners)
+        super().addChainsAccessFrom(path, self.rootOwner|self.owners)
+
+    def deletePath(self,path):
+        super().deleteChainsAccessTo(path, self.rootOwner|self.owners)
+        super().deleteChainsAccessFrom(path, self.rootOwner|self.owners)
+
+    def searchObj(self,root):
+        pass
+
+    def showTree(self,center):
+        deepLevel = 0
+        leftTree = {}
+        rightTree = {center:{}}
+        center = self.d.changeType(center,'l')
+        createLeft()
+        createRight()
+        print(leftTree)
+        print(rightTree)
+        def createLeft(obj = center):
+            for path in self.d.getChainsAccessTo(obj):
+                leftTree = dict(leftTree, path)
+            
+            def mkDict(tree,path,index = 0):
+                if path[index] not in tree.getKeys():
+                    tree[path[index]] = {}
+                if index < len(path)-1:
+                    tree[path[index]] = mkDict(tree,path,index+1)
+                    return tree
+                else:
+                    return tree
+
+
+                    
+                
+        def createRight(path = center):
+            tree = rightTree
+            for obj in self.d.getChainAccessFrom(path[-1]):
+                for o in path:
+                    tree = tree.get(o)
+                tree[obj] = {}
+                rightTree[path[-1]] = tree
+                path.append(obj)
+                path = createRight(path)
+            path[:-1]
+            return path
+    
